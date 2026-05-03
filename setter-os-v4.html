@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self';">
+<title>Setter OS — Duplica tus agendas en 45 días</title>
+<meta name="description" content="El sistema que duplica las agendas de infonegocios en 45 días. Caso real: $50K → $120K en un mes.">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand: #FF2E00;
+  --brand-dim: #991b00;
+  --void: #050505;
+  --panel: #0A0A0A;
+  --border: #1F1F1F;
+  --text: #EAEAEA;
+  --muted: #9CA3AF;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #080808;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,46,0,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 100% 0%, rgba(255,46,0,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 40% at 0% 100%, rgba(255,46,0,0.04) 0%, transparent 50%),
+    radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CURSOR */
+#cursor { position: fixed; width: 24px; height: 24px; border: 1px solid rgba(255,46,0,0.5); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .2s, height .2s, background .2s, border-color .2s; will-change: left,top; }
+#cursor-dot { position: fixed; width: 4px; height: 4px; background: var(--brand); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); will-change: left,top; }
+body.hovering #cursor { width: 56px; height: 56px; background: rgba(255,46,0,.08); border-color: var(--brand); }
+
+/* GRID HIGHLIGHT */
+#grid-highlight { position: fixed; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(600px circle at var(--mouse-x,50%) var(--mouse-y,50%), rgba(255,46,0,0.025), transparent 40%); }
+
+/* GLOBAL PARTICLES */
+#global-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* PRELOADER */
+#preloader { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity .5s ease; }
+#preloader.hide { opacity: 0; pointer-events: none; }
+.pre-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--brand); letter-spacing: .15em; }
+.pre-bar-wrap { width: 260px; height: 1px; background: rgba(255,46,0,.15); }
+.pre-bar { height: 100%; background: var(--brand); width: 0%; transition: width .1s linear; }
+.pre-pct { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,46,0,.4); letter-spacing: .1em; }
+
+/* HUD */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+.hud-tl { position: absolute; top: 20px; left: 24px; display: flex; flex-direction: column; gap: 4px; }
+.hud-tr { position: absolute; top: 20px; right: 24px; }
+.hud-br { position: absolute; bottom: 20px; right: 24px; }
+.hud-status { display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; color: rgba(255,46,0,.6); }
+.hud-dot { width: 5px; height: 5px; background: var(--brand); border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+.hud-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.18); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* NAV */
+nav { position: fixed; top: 0; width: 100%; z-index: 100; padding: 20px 48px; display: flex; justify-content: space-between; align-items: center; transition: all .4s ease; }
+nav.scrolled { background: rgba(8,8,8,.92); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-logo { display: flex; align-items: center; gap: 9px; font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: .05em; text-transform: uppercase; }
+.nav-logo-dot { width: 6px; height: 6px; background: var(--brand); border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+.nav-cta { background: white; color: #080808; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 11px 26px; text-decoration: none; transition: all .3s ease; cursor: none; }
+.nav-cta:hover { background: var(--brand); color: white; }
+
+/* PILL */
+.pill { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .15em; text-transform: uppercase; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.45); padding: 6px 13px; border-radius: 2px; }
+.pill.active { background: rgba(255,46,0,.08); border-color: rgba(255,46,0,.25); color: var(--brand); }
+.pill-dot { width: 5px; height: 5px; background: currentColor; border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+
+/* HERO */
+#hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 120px 24px 80px; position: relative; overflow: hidden; }
+.hero-glow { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,46,0,.12) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; z-index: 1; animation: pulse-glow 4s ease-in-out infinite; }
+@keyframes pulse-glow { 0%,100%{opacity:.6} 50%{opacity:1} }
+.hero-content { position: relative; z-index: 2; max-width: 860px; }
+.hero-pills { display: flex; justify-content: center; gap: 10px; margin-bottom: 36px; flex-wrap: wrap; }
+.hero-h1 { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: clamp(3rem,8vw,7.5rem); line-height: .95; letter-spacing: -.04em; text-transform: uppercase; margin-bottom: 28px; }
+.hero-h1 .line-brand { color: var(--brand); filter: drop-shadow(0 0 30px rgba(255,46,0,.45)); display: block; }
+.hero-sub { font-size: clamp(15px,1.8vw,19px); color: var(--muted); max-width: 580px; margin: 0 auto 44px; line-height: 1.75; }
+.hero-sub strong { color: var(--text); }
+.hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* BUTTONS */
+.btn-primary { background: white; color: #080808; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 17px 38px; text-decoration: none; transition: all .3s ease; cursor: none; display: inline-block; }
+.btn-primary:hover { background: var(--brand); color: white; transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,46,0,.28); }
+.btn-secondary { background: transparent; color: rgba(255,255,255,.55); font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 17px 38px; text-decoration: none; border: 1px solid rgba(255,255,255,.13); transition: all .3s ease; cursor: none; display: inline-block; }
+.btn-secondary:hover { border-color: var(--brand); color: var(--brand); }
+
+/* SECTIONS */
+section { padding: 96px 24px; position: relative; z-index: 2; }
+.container { max-width: 1080px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: 64px; }
+.section-h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: clamp(2rem,5vw,4.2rem); line-height: 1.0; letter-spacing: -.03em; text-transform: uppercase; margin: 18px 0; }
+.grad { background: linear-gradient(90deg,var(--brand),#ff7040); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.section-sub { font-size: 16px; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.75; }
+
+/* MECHANISM */
+.mech-core { width: 160px; height: 160px; border: 1px solid rgba(255,46,0,.28); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle,rgba(255,46,0,.07) 0%,transparent 70%); margin: 0 auto 44px; animation: core-pulse 4s ease-in-out infinite; }
+@keyframes core-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,46,0,.08)} 50%{box-shadow:0 0 32px 8px rgba(255,46,0,.06)} }
+.mech-core-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,46,0,.45); letter-spacing: .18em; text-transform: uppercase; margin-bottom: 6px; }
+.mech-core-name { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 20px; letter-spacing: -.02em; color: var(--brand); text-align: center; }
+.mech-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+.mech-card { background: rgba(10,10,10,.92); border: 1px solid var(--border); padding: 30px 26px; position: relative; overflow: hidden; transition: transform .25s ease, border-color .25s ease, background .25s ease; cursor: none; }
+.mech-card::before { content:''; position: absolute; top:0; left:0; right:0; height:2px; background: var(--brand); transform: scaleX(0); transform-origin: left; transition: transform .35s ease; }
+.mech-card:hover::before { transform: scaleX(1); }
+.mech-card:hover { border-color: rgba(255,46,0,.18); background: rgba(255,46,0,.025); transform: translateY(-3px); }
+.mech-icon { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,46,0,.38); letter-spacing: .1em; margin-bottom: 14px; }
+.mech-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.01em; margin-bottom: 9px; }
+.mech-desc { font-size: 13px; color: rgba(234,234,234,.48); line-height: 1.7; }
+
+/* RESULT */
+.result-section { background: linear-gradient(180deg,rgba(255,46,0,.025) 0%,transparent 100%); }
+.result-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 56px; border: 1px solid var(--border); }
+.result-ba { padding: 52px 44px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--border); }
+.ba-block { padding: 22px 26px; border: 1px solid; }
+.ba-block.before { border-color: rgba(255,255,255,.07); opacity: .58; }
+.ba-block.after { border-color: var(--brand); background: rgba(255,46,0,.035); }
+.ba-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 9px; color: rgba(255,255,255,.28); }
+.ba-block.after .ba-tag { color: var(--brand); }
+.ba-number { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 38px; letter-spacing: -.03em; }
+.ba-block.after .ba-number { color: #ff6b3d; }
+.ba-detail { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,.28); margin-top: 5px; }
+.ba-arrow { font-size: 24px; color: var(--brand); text-align: center; }
+.result-copy { padding: 52px 44px; display: flex; flex-direction: column; justify-content: center; }
+.result-copy h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: clamp(26px,3vw,42px); letter-spacing: -.03em; line-height: 1.05; margin-bottom: 18px; text-transform: uppercase; }
+.result-copy p { font-size: 15px; color: rgba(234,234,234,.52); line-height: 1.8; margin-bottom: 28px; }
+.result-badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); border: 1px solid rgba(255,46,0,.18); padding: 9px 14px; background: rgba(255,46,0,.04); }
+
+/* PAIN CARDS */
+.pain-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; }
+.pain-card { background: rgba(6,6,8,.88); border: 1px solid rgba(255,46,0,.1); border-left: 2px solid rgba(255,46,0,.35); padding: 38px; position: relative; overflow: hidden; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; cursor: none; }
+.pain-card:hover { transform: translateX(2px) translateY(-2px); border-color: rgba(255,46,0,.25); border-left-color: var(--brand); box-shadow: -4px 4px 32px rgba(255,46,0,.09); }
+.pain-bg-num { position: absolute; top: -18px; right: 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 6.5rem; color: rgba(255,46,0,.04); line-height: 1; pointer-events: none; user-select: none; }
+.pain-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,46,0,.42); letter-spacing: .1em; margin-bottom: 14px; }
+.pain-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.01em; margin-bottom: 11px; }
+.pain-body { font-size: 14px; color: rgba(234,234,234,.58); line-height: 1.7; margin-bottom: 18px; }
+.pain-body em { color: rgba(234,234,234,.38); font-style: italic; }
+.sev-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,.18); letter-spacing: .1em; display: flex; justify-content: space-between; margin-bottom: 5px; }
+.sev-bar { height: 2px; background: rgba(255,46,0,.1); overflow: hidden; }
+.sev-fill { height: 100%; background: linear-gradient(90deg,var(--brand-dim),var(--brand)); width: 0%; transition: width 1.4s ease; }
+
+/* MODEL SIMPLE */
+.model-simple { border: 1px solid rgba(255,46,0,.2); padding: 32px 40px; margin-top: 56px; background: rgba(255,46,0,.02); display: flex; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+.model-simple-icon { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--brand); }
+.model-simple-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(16px,2vw,22px); letter-spacing: -.01em; color: var(--text); }
+.model-simple-text span { color: var(--brand); }
+
+/* CTA */
+#contacto { text-align: center; position: relative; overflow: hidden; background: linear-gradient(180deg,rgba(255,46,0,.05) 0%,rgba(255,46,0,.015) 50%,transparent 100%); border-top: 1px solid rgba(255,46,0,.13); }
+.cta-warning { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,46,0,.65); border: 1px solid rgba(255,46,0,.18); padding: 9px 18px; background: rgba(255,46,0,.04); margin-bottom: 36px; }
+.cta-title { font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: clamp(34px,6vw,76px); letter-spacing: -.04em; text-transform: uppercase; line-height: .95; margin-bottom: 22px; }
+.cta-sub { font-size: 16px; color: rgba(234,234,234,.48); max-width: 480px; margin: 0 auto 44px; line-height: 1.75; }
+.cta-risk { margin-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,.18); letter-spacing: .08em; }
+.cta-reqs { margin-top: 44px; display: inline-flex; flex-direction: column; gap: 9px; text-align: left; border: 1px solid var(--border); padding: 26px 30px; background: rgba(10,10,10,.8); }
+.req { display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(234,234,234,.48); letter-spacing: .04em; }
+.req-dot { width: 4px; height: 4px; background: var(--brand); border-radius: 50%; flex-shrink: 0; }
+.req.no { color: rgba(234,234,234,.22); text-decoration: line-through; text-decoration-color: rgba(255,255,255,.1); }
+.req.no .req-dot { background: rgba(255,255,255,.14); }
+
+/* FOOTER */
+footer { padding: 26px 48px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; position: relative; z-index: 2; }
+.footer-logo { font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: rgba(234,234,234,.35); }
+.footer-sys { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .18em; color: rgba(255,255,255,.1); text-transform: uppercase; }
+
+/* REVEAL */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  nav { padding: 14px 18px; }
+  section { padding: 64px 18px; }
+  .pain-grid, .mech-grid { grid-template-columns: 1fr; }
+  .result-wrapper { grid-template-columns: 1fr; }
+  .result-ba { border-right: none; border-bottom: 1px solid var(--border); padding: 36px 24px; }
+  .result-copy { padding: 36px 24px; }
+  .model-simple { flex-direction: column; padding: 28px 20px; }
+  .cta-reqs { padding: 18px; }
+  footer { padding: 18px; }
+  .hud-tl, .hud-tr, .hud-br { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+<div id="grid-highlight"></div>
+<canvas id="global-particles"></canvas>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <div class="pre-text" id="pre-text">INITIALIZING SETTER OS...</div>
+  <div class="pre-bar-wrap"><div class="pre-bar" id="pre-bar"></div></div>
+  <div class="pre-pct" id="pre-pct">0%</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-tl">
+    <div class="hud-status"><div class="hud-dot"></div>System Status: Online</div>
+    <div class="hud-label">SYS: ENCRYPTED · SEC_LEVEL: MAX</div>
+  </div>
+  <div class="hud-tr"><div class="hud-label">Ver: 1.0.0_OS</div></div>
+  <div class="hud-br"><div id="hud-timer" class="hud-label">00:00:00:000</div></div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo"><div class="nav-logo-dot"></div>Setter OS</div>
+  <a href="#contacto" class="nav-cta" rel="noopener">Quiero escalar</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-pills">
+      <span class="pill active"><span class="pill-dot"></span>Sistema activo</span>
+      <span class="pill">2026 Edition</span>
+    </div>
+    <h1 class="hero-h1">
+      <span>DUPLICA TUS</span>
+      <span class="line-brand">AGENDAS</span>
+      <span>EN 45 DÍAS</span>
+    </h1>
+    <p class="hero-sub">Sin contratar más equipo, sin tener más volumen de leads <strong>y sin pagar más.</strong></p>
+    <div class="hero-ctas">
+      <a href="#contacto" class="btn-primary">Quiero el sistema</a>
+      <a href="#mecanismo" class="btn-secondary">Ver cómo funciona</a>
+    </div>
+  </div>
+</section>
+
+<!-- MECANISMO -->
+<section id="mecanismo">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="pill active" style="margin-bottom:18px"><span class="pill-dot"></span>// El mecanismo</div>
+      <h2 class="section-h2"><span class="grad">CÓMO</span><br>FUNCIONA.</h2>
+      <p class="section-sub">Cinco módulos que convierten un proceso de setting caótico en una máquina predecible de agendas.</p>
+    </div>
+    <div class="mech-core reveal">
+      <div class="mech-core-label">// Core</div>
+      <div class="mech-core-name">SETTER<br>OS</div>
+    </div>
+    <div class="mech-grid">
+      <div class="mech-card reveal">
+        <div class="mech-icon">// MOD_01</div>
+        <div class="mech-title">Auditoría del funnel</div>
+        <p class="mech-desc">Mapeamos todo el proceso e identificamos exactamente dónde está el cuello de botella.</p>
+      </div>
+      <div class="mech-card reveal">
+        <div class="mech-icon">// MOD_02</div>
+        <div class="mech-title">Estructura de prospección</div>
+        <p class="mech-desc">Se hace un análisis para mejorar o crear la estructura de prospección actual, con el objetivo de que en cada agenda el lead llegue con la tarjeta en la mano.</p>
+      </div>
+      <div class="mech-card reveal">
+        <div class="mech-icon">// MOD_03</div>
+        <div class="mech-title">Calificación con IA</div>
+        <p class="mech-desc">Claude integrado en Manychat. Califica, filtra y prioriza leads sin intervención humana. Solo llegan los buenos.</p>
+      </div>
+      <div class="mech-card reveal">
+        <div class="mech-icon">// MOD_04</div>
+        <div class="mech-title">Sistema de automatizaciones</div>
+        <p class="mech-desc">Flujos que harán seguimientos automatizados y le ahorrarán horas al setter para que se centre en las conversaciones que importan.</p>
+      </div>
+      <div class="mech-card reveal">
+        <div class="mech-icon">// MOD_05</div>
+        <div class="mech-title">Coaching al setter</div>
+        <p class="mech-desc">Corrección de conversaciones y seguimiento constante de forma que los estándares mínimos del setter estén alineados con los objetivos del negocio.</p>
+      </div>
+    </div>
+    <div class="model-simple reveal">
+      <div class="model-simple-text">Trabajamos con un modelo de <span>0% de riesgo</span> para ti.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CASO DE ESTUDIO -->
+<section class="result-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="pill active" style="margin-bottom:18px"><span class="pill-dot"></span>// Caso de estudio real</div>
+      <h2 class="section-h2">NUESTRO ÚLTIMO<br><span class="grad">CLIENTE.</span></h2>
+      <p class="section-sub">Una mentoría de dropshipping (<strong style="color:var(--text)">@antoecom_</strong>) promediando $50K al mes y pasó esto.</p>
+    </div>
+    <div class="result-wrapper reveal">
+      <div class="result-ba">
+        <div class="ba-block before">
+          <div class="ba-tag">// Estado inicial</div>
+          <div class="ba-number">$50,000</div>
+          <div class="ba-detail">facturación mensual · 70 agendas/mes</div>
+        </div>
+        <div class="ba-arrow">↓</div>
+        <div class="ba-block after">
+          <div class="ba-tag">// 30 días después</div>
+          <div class="ba-number">$120,000</div>
+          <div class="ba-detail">facturación mensual · 150 agendas/mes</div>
+        </div>
+      </div>
+      <div class="result-copy">
+        <h3>$70,000<br>adicionales<br>en un mes.</h3>
+        <p>Implementé el Setter OS completo en menos de 30 días. Auditoría, coaching, automatizaciones y tracker. Las agendas pasaron de 70 a 150. La facturación siguió el mismo camino.</p>
+        <div class="result-badge"><span class="pill-dot"></span>Caso verificado · 30 días de implementación</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ESTO ES PARA TI SI -->
+<section id="problema">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="pill active" style="margin-bottom:18px"><span class="pill-dot"></span>// Diagnóstico del sistema</div>
+      <h2 class="section-h2">ESTO ES<br><span class="grad">PARA TI SI…</span></h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card reveal">
+        <div class="pain-bg-num">01</div>
+        <div class="pain-tag">// Error_Log_01 · Estancamiento</div>
+        <div class="pain-title">Llevas meses en el mismo número.</div>
+        <p class="pain-body">Tienes el proceso, el producto y la audiencia. Pero la facturación no se mueve.</p>
+        <div class="sev-label"><span>SEVERITY</span><span>90%</span></div>
+        <div class="sev-bar"><div class="sev-fill" data-w="90"></div></div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-bg-num">02</div>
+        <div class="pain-tag">// Error_Log_02 · Saturación</div>
+        <div class="pain-title">Tu setter se ahoga con leads descalificados.</div>
+        <p class="pain-body">Responde 300 DMs al día de personas que no son tu cliente ideal y los pocos que califican no reciben la atención que merecen por el volumen.</p>
+        <div class="sev-label"><span>SEVERITY</span><span>85%</span></div>
+        <div class="sev-bar"><div class="sev-fill" data-w="85"></div></div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-bg-num">03</div>
+        <div class="pain-tag">// Error_Log_03 · Dependencia</div>
+        <div class="pain-title">Si no estás encima, el negocio se para.</div>
+        <p class="pain-body">Tienes que revisar qué hace el setter, si cumple métricas, si contestó a tiempo. Una microgestión constante que te quita tiempo para escalar.</p>
+        <div class="sev-label"><span>SEVERITY</span><span>95%</span></div>
+        <div class="sev-bar"><div class="sev-fill" data-w="95"></div></div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-bg-num">04</div>
+        <div class="pain-tag">// Error_Log_04 · Falta de claridad</div>
+        <div class="pain-title">Tienes falta de claridad.</div>
+        <p class="pain-body">No conoces las métricas, no sabes qué está fallando ni en qué parte del proceso se están quedando los clientes potenciales.</p>
+        <div class="sev-label"><span>SEVERITY</span><span>80%</span></div>
+        <div class="sev-bar"><div class="sev-fill" data-w="80"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="contacto">
+  <div class="container" style="display:flex;flex-direction:column;align-items:center;">
+    <div class="cta-warning reveal">⚠ Solo trabajo con 3 negocios al mes — plazas limitadas</div>
+    <h2 class="cta-title reveal">¿LISTO PARA<br><span style="color:var(--brand)">ESCALAR?</span></h2>
+    <p class="cta-sub reveal">Si tu infonegocio factura entre $5K y $30K al mes y el setting es el cuello de botella, hablemos.</p>
+    <a href="https://wa.link/jmsc6n" class="btn-primary reveal" rel="noopener noreferrer" target="_blank" style="font-size:15px;padding:20px 52px;">Escríbenos</a>
+    <p class="cta-risk reveal">Sin compromiso · Sin pago por adelantado</p>
+    <div class="cta-reqs reveal">
+      <div class="req"><div class="req-dot"></div>Infonegocio hispanohablante con presencia en Instagram</div>
+      <div class="req"><div class="req-dot"></div>Facturación entre $5K y $30K/mes</div>
+      <div class="req"><div class="req-dot"></div>Ya tienes setter y proceso establecido</div>
+      <div class="req"><div class="req-dot"></div>Sientes que el setting frena tu crecimiento</div>
+      <div class="req no"><div class="req-dot"></div>Negocios sin ventas previas</div>
+      <div class="req no"><div class="req-dot"></div>Negocios fuera del nicho de infoproductos</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Setter OS</div>
+  <div class="footer-sys">SYSTEM_ENCRYPTED · © 2025</div>
+</footer>
+
+<script>
+// PRELOADER
+const msgs = ["LOADING AVATAR...","MAPPING PAIN POINTS...","BUILDING PIPELINE...","INITIALIZING SETTER OS..."];
+let pct = 0;
+const bar = document.getElementById('pre-bar');
+const pctEl = document.getElementById('pre-pct');
+const txtEl = document.getElementById('pre-text');
+document.body.style.overflow = 'hidden';
+
+const iv = setInterval(() => {
+  pct += Math.random() * 14 + 4;
+  if (pct > 100) pct = 100;
+  bar.style.width = pct + '%';
+  pctEl.textContent = Math.floor(pct) + '%';
+  txtEl.textContent = msgs[Math.min(Math.floor((pct/100)*(msgs.length-1)), msgs.length-1)];
+  if (pct >= 100) {
+    clearInterval(iv);
+    setTimeout(() => {
+      document.getElementById('preloader').classList.add('hide');
+      setTimeout(() => {
+        document.getElementById('preloader').remove();
+        document.body.style.overflow = '';
+        initParticles();
+        animateHero();
+      }, 500);
+    }, 250);
+  }
+}, 75);
+
+// GLOBAL PARTICLES — cubre toda la página
+function initParticles() {
+  const canvas = document.getElementById('global-particles');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const particles = [];
+  const COUNT = 120;
+  let particlesActive = true;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    // Limitar altura máxima para evitar desbordamiento de memoria en páginas muy largas
+    const maxH = Math.min(document.body.scrollHeight, 15000);
+    H = canvas.height = maxH;
+  }
+  resize();
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    // Debounce para evitar llamadas excesivas al resize
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  });
+  setTimeout(resize, 500);
+
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * document.body.scrollHeight,
+      r: Math.random() * 1.3 + 0.2,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      a: Math.random() * 0.35 + 0.08
+    });
+  }
+
+  function draw() {
+    if (!particlesActive) return;
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,46,0,${p.a})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('beforeunload', () => { particlesActive = false; });
+}
+
+// HERO ANIMATION
+function animateHero() {
+  const els = ['.hero-pills','.hero-h1','.hero-sub','.hero-ctas'];
+  els.forEach((sel, i) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = `opacity .7s ease ${i*0.15+0.1}s, transform .7s ease ${i*0.15+0.1}s`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.opacity = '1'; el.style.transform = 'translateY(0)';
+    }));
+  });
+}
+
+// CURSOR
+const cursor = document.getElementById('cursor');
+const dot = document.getElementById('cursor-dot');
+let cx = 0, cy = 0, tx = 0, ty = 0;
+let cursorAnimActive = true;
+document.addEventListener('mousemove', e => {
+  tx = e.clientX; ty = e.clientY;
+  dot.style.left = tx + 'px'; dot.style.top = ty + 'px';
+  const gh = document.getElementById('grid-highlight');
+  if (gh) {
+    gh.style.setProperty('--mouse-x', tx + 'px');
+    gh.style.setProperty('--mouse-y', ty + 'px');
+  }
+});
+(function animCursor() {
+  if (!cursorAnimActive) return;
+  cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12;
+  cursor.style.left = cx + 'px'; cursor.style.top = cy + 'px';
+  requestAnimationFrame(animCursor);
+})();
+window.addEventListener('beforeunload', () => { cursorAnimActive = false; });
+document.querySelectorAll('a,button,.pain-card,.mech-card').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+
+// NAVBAR — usar window.scrollY explícito
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// HUD TIMER — con clearInterval para evitar memory leak
+const t0 = Date.now();
+const timerInterval = setInterval(() => {
+  const el = document.getElementById('hud-timer');
+  if (!el) { clearInterval(timerInterval); return; }
+  const d = Date.now() - t0;
+  const h = String(Math.floor(d/3600000)).padStart(2,'0');
+  const m = String(Math.floor((d%3600000)/60000)).padStart(2,'0');
+  const s = String(Math.floor((d%60000)/1000)).padStart(2,'0');
+  const ms = String(d%1000).padStart(3,'0');
+  el.textContent = `${h}:${m}:${s}:${ms}`;
+}, 50);
+
+// Limpiar timer si la página se descarga
+window.addEventListener('beforeunload', () => clearInterval(timerInterval));
+
+// REVEAL
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 70);
+      obs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// SEVERITY BARS — leer valor desde atributo, validar que sea numérico
+const sevObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const fill = e.target.querySelector('.sev-fill');
+      if (fill) {
+        const rawVal = fill.getAttribute('data-w');
+        const val = Math.min(100, Math.max(0, parseInt(rawVal, 10) || 0));
+        setTimeout(() => { fill.style.width = val + '%'; }, 150);
+      }
+      sevObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.pain-card').forEach(el => sevObs.observe(el));
+</script>
+</body>
+</html>
